@@ -7,15 +7,11 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-/**
- * @author youle
- */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 public class UserDO {
-
     private Long id;
 
     private String username;

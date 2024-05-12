@@ -4,4 +4,4 @@ spring:
     # 数据库连接信息
     url: jdbc:mysql://121.37.160.132:3306/xiaohashu?useUnicode=true&characterEncoding=utf-8&autoReconnect=true&useSSL=false&serverTimezone=Asia/Shanghai
     username: root
-    password: 123456
+    password: Pm6rALjdWghAoBv72UQF
