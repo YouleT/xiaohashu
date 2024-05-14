@@ -16,7 +16,7 @@ spring:
       min-evictable-idle-time-millis: 300000 # 配置一个连接在连接池中最小生存的时间（单位：毫秒）
       max-evictable-idle-time-millis: 900000 # 配置一个连接在连接池中最大生存的时间（单位：毫秒）
       validation-query: SELECT 1 FROM DUAL # 配置测试连接是否可用的查询 sql
-      connectionProperties: MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBALgYzxVV2Ha46zRspIIYrlfR1i9gcvJKr1jaCCqR4tTLmNKO8Ei+i7jpggHMhW4ONWs8eXTioTDiyrnubYqLCw0CAwEAAQ== # config.decrypt=true 表示开启密码解密功能，config.decrypt.key 是用于解密的密钥，即单元测试生成的公钥。
+      connectionProperties: config.decrypt=true;config.decrypt.key=MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBALgYzxVV2Ha46zRspIIYrlfR1i9gcvJKr1jaCCqR4tTLmNKO8Ei+i7jpggHMhW4ONWs8eXTioTDiyrnubYqLCw0CAwEAAQ== # config.decrypt=true 表示开启密码解密功能，config.decrypt.key 是用于解密的密钥，即单元测试生成的公钥。
       test-on-borrow: false
       test-on-return: false
       pool-prepared-statements: false
