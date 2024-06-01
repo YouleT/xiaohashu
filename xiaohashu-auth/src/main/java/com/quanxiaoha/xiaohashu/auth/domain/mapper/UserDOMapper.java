@@ -2,9 +2,6 @@ package com.quanxiaoha.xiaohashu.auth.domain.mapper;
 
 import com.quanxiaoha.xiaohashu.auth.domain.dataobject.UserDO;
 
-/**
- * @author youle
- */
 public interface UserDOMapper {
     int deleteByPrimaryKey(Long id);
 
@@ -17,4 +14,12 @@ public interface UserDOMapper {
     int updateByPrimaryKeySelective(UserDO record);
 
     int updateByPrimaryKey(UserDO record);
+
+    /**
+     * 根据手机号查询记录
+     *
+     * @param phone
+     * @return
+     */
+    UserDO selectByPhone(String phone);
 }
