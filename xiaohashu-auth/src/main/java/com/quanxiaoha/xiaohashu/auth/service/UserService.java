@@ -24,5 +24,5 @@ public interface UserService {
      *
      * @return
      */
-    Response<?> logout(Long userId);
+    Response<?> logout();
 }
