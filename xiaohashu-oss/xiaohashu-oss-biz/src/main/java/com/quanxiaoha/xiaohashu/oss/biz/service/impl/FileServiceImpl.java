@@ -18,10 +18,9 @@ import org.springframework.web.multipart.MultipartFile;
 @Slf4j
 public class FileServiceImpl implements FileService {
 
+    private static final String BUCKET_NAME = "xiaohashu";
     @Resource
     private FileStrategy fileStrategy;
-
-    private static final String BUCKET_NAME = "xiaohashu";
 
     @Override
     public Response<?> uploadFile(MultipartFile file) {

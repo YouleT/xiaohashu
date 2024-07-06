@@ -33,6 +33,8 @@ import java.util.stream.Collectors;
 @Slf4j
 public class PushRolePermissions2RedisRunner implements ApplicationRunner {
 
+    // 权限同步标记 Key
+    private static final String PUSH_PERMISSION_FLAG = "push.permission.flag";
     @Resource
     private RedisTemplate<String, String> redisTemplate;
     @Resource
@@ -41,8 +43,6 @@ public class PushRolePermissions2RedisRunner implements ApplicationRunner {
     private PermissionDOMapper permissionDOMapper;
     @Resource
     private RolePermissionDOMapper rolePermissionDOMapper;
-    // 权限同步标记 Key
-    private static final String PUSH_PERMISSION_FLAG = "push.permission.flag";
 
     @Override
     public void run(ApplicationArguments args) {

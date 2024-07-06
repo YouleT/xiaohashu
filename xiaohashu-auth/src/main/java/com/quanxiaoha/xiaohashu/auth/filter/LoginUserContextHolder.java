@@ -18,16 +18,6 @@ public class LoginUserContextHolder {
     // 初始化一个 ThreadLocal 变量
     private static final ThreadLocal<Map<String, Object>> LOGIN_USER_CONTEXT_THREAD_LOCAL = TransmittableThreadLocal.withInitial(HashMap::new);
 
-
-    /**
-     * 设置用户 ID
-     *
-     * @param value
-     */
-    public static void setUserId(Object value) {
-        LOGIN_USER_CONTEXT_THREAD_LOCAL.get().put(GlobalConstants.USER_ID, value);
-    }
-
     /**
      * 获取用户 ID
      *
@@ -39,6 +29,15 @@ public class LoginUserContextHolder {
             return null;
         }
         return Long.valueOf(value.toString());
+    }
+
+    /**
+     * 设置用户 ID
+     *
+     * @param value
+     */
+    public static void setUserId(Object value) {
+        LOGIN_USER_CONTEXT_THREAD_LOCAL.get().put(GlobalConstants.USER_ID, value);
     }
 
     /**
