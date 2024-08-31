@@ -3,37 +3,24 @@ package com.quanxiaoha.xiaohashu.auth.service.impl;
 import cn.dev33.satoken.stp.SaTokenInfo;
 import cn.dev33.satoken.stp.StpUtil;
 import com.google.common.base.Preconditions;
-import com.quanxiaoha.framework.common.enums.DeletedEnum;
-import com.quanxiaoha.framework.common.enums.StatusEnum;
 import com.quanxiaoha.framework.common.exception.BizException;
 import com.quanxiaoha.framework.common.response.Response;
-import com.quanxiaoha.framework.common.util.JsonUtils;
 import com.quanxiaoha.xiaohashu.auth.constant.RedisKeyConstants;
-import com.quanxiaoha.xiaohashu.auth.constant.RoleConstants;
-import com.quanxiaoha.xiaohashu.auth.domain.dataobject.RoleDO;
-import com.quanxiaoha.xiaohashu.auth.domain.dataobject.UserDO;
-import com.quanxiaoha.xiaohashu.auth.domain.dataobject.UserRoleDO;
-import com.quanxiaoha.xiaohashu.auth.domain.mapper.RoleDOMapper;
-import com.quanxiaoha.xiaohashu.auth.domain.mapper.UserDOMapper;
-import com.quanxiaoha.xiaohashu.auth.domain.mapper.UserRoleDOMapper;
 import com.quanxiaoha.xiaohashu.auth.enums.LoginTypeEnum;
 import com.quanxiaoha.xiaohashu.auth.enums.ResponseCodeEnum;
 import com.quanxiaoha.xiaohashu.auth.filter.LoginUserContextHolder;
 import com.quanxiaoha.xiaohashu.auth.model.vo.user.UpdatePasswordReqVO;
 import com.quanxiaoha.xiaohashu.auth.model.vo.user.UserLoginReqVO;
 import com.quanxiaoha.xiaohashu.auth.rpc.UserRpcService;
-import com.quanxiaoha.xiaohashu.auth.service.UserService;
+import com.quanxiaoha.xiaohashu.auth.service.AuthService;
+import com.quanxiaoha.xiaohashu.user.dto.resp.FindUserByPhoneRspDTO;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.support.TransactionTemplate;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 
 /**
@@ -44,18 +31,10 @@ import java.util.Objects;
  **/
 @Service
 @Slf4j
-public class UserServiceImpl implements UserService {
+public class AuthServiceImpl implements AuthService {
 
     @Resource
-    private UserDOMapper userDOMapper;
-    @Resource
-    private UserRoleDOMapper userRoleDOMapper;
-    @Resource
     private RedisTemplate<String, Object> redisTemplate;
-    @Resource
-    private TransactionTemplate transactionTemplate;
-    @Resource
-    private RoleDOMapper roleDOMapper;
     @Resource
     private PasswordEncoder passwordEncoder;
     @Resource
@@ -106,16 +85,17 @@ public class UserServiceImpl implements UserService {
                 break;
             case PASSWORD: // 密码登录
                 String password = userLoginReqVO.getPassword();
-                // 根据手机号查询
-                UserDO userDO1 = userDOMapper.selectByPhone(phone);
+
+                // RPC: 调用用户服务，通过手机号查询用户
+                FindUserByPhoneRspDTO findUserByPhoneRspDTO = userRpcService.findUserByPhone(phone);
 
                 // 判断该手机号是否注册
-                if (Objects.isNull(userDO1)) {
+                if (Objects.isNull(findUserByPhoneRspDTO)) {
                     throw new BizException(ResponseCodeEnum.USER_NOT_FOUND);
                 }
 
                 // 拿到密文密码
-                String encodePassword = userDO1.getPassword();
+                String encodePassword = findUserByPhoneRspDTO.getPassword();
 
                 // 匹配密码是否一致
                 boolean isPasswordCorrect = passwordEncoder.matches(password, encodePassword);
@@ -125,7 +105,7 @@ public class UserServiceImpl implements UserService {
                     throw new BizException(ResponseCodeEnum.PHONE_OR_PASSWORD_ERROR);
                 }
 
-                userId = userDO1.getId();
+                userId = findUserByPhoneRspDTO.getId();
                 break;
             default:
                 break;
@@ -137,52 +117,6 @@ public class UserServiceImpl implements UserService {
         SaTokenInfo tokenInfo = StpUtil.getTokenInfo();
         // 返回 Token 令牌
         return Response.success(tokenInfo.tokenValue);
-    }
-
-    /**
-     * 系统自动注册用户
-     *
-     * @param phone
-     * @return
-     */
-    private Long registerUser(String phone) {
-        return transactionTemplate.execute(status -> {
-            try {
-                // 获取全局自增的小哈书 ID
-                Long xiaohashuId = redisTemplate.opsForValue().increment(RedisKeyConstants.XIAOHASHU_ID_GENERATOR_KEY);
-
-                UserDO userDO = UserDO.builder().phone(phone).xiaohashuId(String.valueOf(xiaohashuId)) // 自动生成小红书号 ID
-                        .nickname("小红薯" + xiaohashuId) // 自动生成昵称, 如：小红薯10000
-                        .status(StatusEnum.ENABLE.getValue()) // 状态为启用
-                        .createTime(LocalDateTime.now()).updateTime(LocalDateTime.now()).isDeleted(DeletedEnum.NO.getValue()) // 逻辑删除
-                        .build();
-
-                // 添加入库
-                userDOMapper.insert(userDO);
-
-                // 获取刚刚添加入库的用户 ID
-                Long userId = userDO.getId();
-
-                // 给该用户分配一个默认角色
-                UserRoleDO userRoleDO = UserRoleDO.builder().userId(userId).roleId(RoleConstants.COMMON_USER_ROLE_ID).createTime(LocalDateTime.now()).updateTime(LocalDateTime.now()).isDeleted(DeletedEnum.NO.getValue()).build();
-                userRoleDOMapper.insert(userRoleDO);
-
-                RoleDO roleDO = roleDOMapper.selectByPrimaryKey(RoleConstants.COMMON_USER_ROLE_ID);
-
-                // 将该用户的角色 ID 存入 Redis 中，指定初始容量为 1，这样可以减少在扩容时的性能开销
-                List<String> roles = new ArrayList<>(1);
-                roles.add(roleDO.getRoleKey());
-
-                String userRolesKey = RedisKeyConstants.buildUserRoleKey(userId);
-                redisTemplate.opsForValue().set(userRolesKey, JsonUtils.toJsonString(roles));
-
-                return userId;
-            } catch (Exception e) {
-                status.setRollbackOnly(); // 标记事务为回滚
-                log.error("==> 系统注册用户异常: ", e);
-                return null;
-            }
-        });
     }
 
     /**
@@ -202,17 +136,21 @@ public class UserServiceImpl implements UserService {
         return Response.success();
     }
 
+    /**
+     * 修改密码
+     *
+     * @param updatePasswordReqVO
+     * @return
+     */
     @Override
     public Response<?> updatePassword(UpdatePasswordReqVO updatePasswordReqVO) {
         // 新密码
         String newPassword = updatePasswordReqVO.getNewPassword();
         // 密码加密
         String encodePassword = passwordEncoder.encode(newPassword);
-        // 获取当前请求对应的用户 ID
-        Long userId = LoginUserContextHolder.getUserId();
-        UserDO userDO = UserDO.builder().id(userId).password(encodePassword).updateTime(LocalDateTime.now()).build();
-        // 更新密码
-        userDOMapper.updateByPrimaryKeySelective(userDO);
+
+        // RPC: 调用用户服务：更新密码
+        userRpcService.updatePassword(encodePassword);
 
         return Response.success();
     }

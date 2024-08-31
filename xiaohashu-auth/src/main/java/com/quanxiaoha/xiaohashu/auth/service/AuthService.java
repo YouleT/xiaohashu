@@ -10,7 +10,7 @@ import com.quanxiaoha.xiaohashu.auth.model.vo.user.UserLoginReqVO;
  * @version: v1.0.0
  * @description: TODO
  **/
-public interface UserService {
+public interface AuthService {
 
     /**
      * 登录与注册

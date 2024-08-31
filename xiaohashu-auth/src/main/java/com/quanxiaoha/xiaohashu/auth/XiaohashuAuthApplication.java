@@ -9,7 +9,6 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
  * @author youle
  */
 @SpringBootApplication
-@MapperScan("com.quanxiaoha.xiaohashu.auth.domain.mapper")
 @EnableFeignClients(basePackages = "com.quanxiaoha.xiaohashu")
 public class XiaohashuAuthApplication {
     public static void main(String[] args) {
