@@ -33,7 +33,8 @@
         from t_user
         where id = #{id,jdbcType=BIGINT}
     </delete>
-    <insert id="insert" parameterType="com.quanxiaoha.xiaohashu.user.biz.domain.dataobject.UserDO">
+    <insert id="insert" parameterType="com.quanxiaoha.xiaohashu.user.biz.domain.dataobject.UserDO"
+            useGeneratedKeys="true" keyProperty="id">
         insert into t_user (id, xiaohashu_id, `password`,
                             nickname, avatar, birthday,
                             background_img, phone, sex,
@@ -198,4 +199,9 @@
             is_deleted     = #{isDeleted,jdbcType=BIT}
         where id = #{id,jdbcType=BIGINT}
     </update>
+    <select id="selectByPhone" resultMap="BaseResultMap">
+        select id, password
+        from t_user
+        where phone = #{phone}
+    </select>
 </mapper>

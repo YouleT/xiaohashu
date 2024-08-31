@@ -21,6 +21,7 @@ import com.quanxiaoha.xiaohashu.auth.enums.ResponseCodeEnum;
 import com.quanxiaoha.xiaohashu.auth.filter.LoginUserContextHolder;
 import com.quanxiaoha.xiaohashu.auth.model.vo.user.UpdatePasswordReqVO;
 import com.quanxiaoha.xiaohashu.auth.model.vo.user.UserLoginReqVO;
+import com.quanxiaoha.xiaohashu.auth.rpc.UserRpcService;
 import com.quanxiaoha.xiaohashu.auth.service.UserService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -57,6 +58,8 @@ public class UserServiceImpl implements UserService {
     private RoleDOMapper roleDOMapper;
     @Resource
     private PasswordEncoder passwordEncoder;
+    @Resource
+    private UserRpcService userRpcService;
 
     /**
      * 登录与注册
@@ -91,19 +94,15 @@ public class UserServiceImpl implements UserService {
                     throw new BizException(ResponseCodeEnum.VERIFICATION_CODE_ERROR);
                 }
 
-                // 通过手机号查询记录
-                UserDO userDO = userDOMapper.selectByPhone(phone);
+                // RPC: 调用用户服务，注册用户
+                Long userIdTmp = userRpcService.registerUser(phone);
 
-                log.info("==> 用户是否注册, phone: {}, userDO: {}", phone, JsonUtils.toJsonString(userDO));
-
-                // 判断是否注册
-                if (Objects.isNull(userDO)) {
-                    // 若此用户还没有注册，系统自动注册该用户
-                    userId = registerUser(phone);
-                } else {
-                    // 已注册，则获取其用户 ID
-                    userId = userDO.getId();
+                // 若调用用户服务，返回的用户 ID 为空，则提示登录失败
+                if (Objects.isNull(userIdTmp)) {
+                    throw new BizException(ResponseCodeEnum.LOGIN_FAIL);
                 }
+
+                userId = userIdTmp;
                 break;
             case PASSWORD: // 密码登录
                 String password = userLoginReqVO.getPassword();

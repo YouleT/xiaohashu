@@ -66,6 +66,13 @@
             <groupId>com.quanxiaoha</groupId>
             <artifactId>xiaoha-spring-boot-starter-jackson</artifactId>
         </dependency>
+
+        <!-- 上下文组件 -->
+        <dependency>
+            <groupId>com.quanxiaoha</groupId>
+            <artifactId>xiaoha-spring-boot-starter-biz-context</artifactId>
+        </dependency>
+
     </dependencies>
 
     <build>
